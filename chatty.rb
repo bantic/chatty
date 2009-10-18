@@ -6,7 +6,7 @@ require 'curb'
 require 'nokogiri'
 
 require 'highline/import'
-require 'levenshtein'
+# require 'levenshtein'
 require 'string_scorer/string_scorer.rb'
 
 pass = `cat ~/.gmail_pass`
@@ -60,6 +60,6 @@ contacts.keys.each do |con|
   puts con.downcase.score(name, :quicksilver)
 end
 
-found = contacts.keys.sort {|a,b| b.downcase.score(name.downcase, :quicksilver) <=> a.downcase.score(name.downcase, :quicksilver)}
+contacts_with_vals = contacts.collect {|c| score = c.score(name.downcase, :quicksilver); next if score < 0.2; [c, score] }.compact.sort{|a,b| b[1] <=> a[1]}.slice(0,5)
 
-puts found.inspect
+puts contacts_with_vals.inspect

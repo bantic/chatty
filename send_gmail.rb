@@ -9,7 +9,7 @@ module SendGMail
 
 @user_name='cory.forsyth@gmail.com'
 @domain='gmail.com'
-@password='#########'
+@password=`cat ~/.gmail_pass`
 
 
 def SendGMail.send_gmail(hsh)
