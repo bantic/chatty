@@ -8,6 +8,7 @@ require 'nokogiri'
 require 'highline/import'
 # require 'levenshtein'
 require 'string_scorer/string_scorer.rb'
+require 'send_gmail'
 
 pass = `cat ~/.gmail_pass`
 
@@ -26,7 +27,7 @@ else
 end
 
 puts "Loading contacts..."
-url = "http://www.google.com/m8/feeds/contacts/cory.forsyth@gmail.com/full?max-results=200"
+url = "http://www.google.com/m8/feeds/contacts/cory.forsyth@gmail.com/full?max-results=10000"
 c = Curl::Easy.perform(url) do |curl|
   curl.headers["Authorization"] = "GoogleLogin auth=#{auth}"
 end
@@ -37,7 +38,7 @@ contacts = {}
 
 DOC.search("entry").each do |entry|
   next unless entry.at("title") && title = entry.at("title").content
-  next if title =~ /^\s*$/
+  title ||= ""
   
   emails = {}
   entry.xpath("./gd:email").collect do |email_node|
@@ -52,14 +53,34 @@ end
 
 puts contacts.inspect
 
-name = HighLine.ask("name? ")
+number = -1
+until number != -1 do
+  name = HighLine.ask("name? ")
 
-puts contacts.keys.inspect
-contacts.keys.each do |con|
-  puts con
-  puts con.downcase.score(name, :quicksilver)
+  found = contacts.collect {|c| score = c[0].downcase.score(name.downcase, :quicksilver); next if score < 0.2; [c, score] }.compact.sort{|a,b| b[1] <=> a[1]}.slice(0,5)
+  found = found.collect{|c,score| c}
+  puts found.inspect
+
+  found.each_with_index do |contact,index|
+    puts "#{index}: #{contact[0]}"
+  end
+  number = HighLine.ask("number? ").to_i
 end
 
-contacts_with_vals = contacts.collect {|c| score = c.score(name.downcase, :quicksilver); next if score < 0.2; [c, score] }.compact.sort{|a,b| b[1] <=> a[1]}.slice(0,5)
+contact = found[number]
+email = if contact[1].size > 1
+  contact[1].each_with_index do |array, index|
+    puts "#{index}: <#{array[0]}> (#{array[1]})"
+  end
+  number = HighLine.ask("number? ").to_i
+  contact[1].to_a[number][0]
+else
+  contact[1].to_a.flatten[0]
+end
+puts "email: #{email}"
 
-puts contacts_with_vals.inspect
+msg = HighLine.ask("message? ")
+
+email = found[number][1].keys.first
+SendGMail.send_gmail({:to => email, :subject => msg, :body => ""})
+puts "sent."
