@@ -11,10 +11,13 @@ def connected?
 end
 
 def send_text
-  phone_number = ARGV[1] || "4352322390"
+  phone_number = ARGV[1] || "9176645212"
   email = "#{phone_number}@txt.att.net"
   url = "http://209.20.90.171/ruby.rhtml?email=#{email}&msg=online!&subject=online!"
   Net::HTTP.get URI.parse(url)
+  
+  url2 = "http://209.20.90.171/ruby.rhtml?email=cory.forsyth@gmail.com&msg=online!&subject=online!"
+  Net::HTTP.get URI.parse(url2)
 end
 
 if ARGV[0] == 'GO'
